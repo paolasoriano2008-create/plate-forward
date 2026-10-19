@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plate Forward · Prototipo</title>
+<style>
+:root{color-scheme:light;--bg:#eef3f6;--card:#fff;--ink:#14222e;--mut:#5c6b78;--pri:#0f6b6b;--onp:#fff;--acc:#f2b01e;--onacc:#2b2000;--ln:#d3dde4;--soft:#dcefee;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0e161c;--card:#17222b;--ink:#e9f0f4;--mut:#93a4b0;--pri:#4fc3c0;--onp:#06201f;--acc:#f2b01e;--ln:#26343f;--soft:#133235}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0e161c;--card:#17222b;--ink:#e9f0f4;--mut:#93a4b0;--pri:#4fc3c0;--onp:#06201f;--acc:#f2b01e;--ln:#26343f;--soft:#133235}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 "Nunito","Segoe UI",system-ui,sans-serif}
+#app{height:100%;max-width:440px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg);border-inline:1px solid var(--ln)}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--ln)}
+header b{font-size:19px;color:var(--pri)}
+#who{font-size:13px;background:var(--soft);padding:3px 10px;border-radius:99px}
+main{flex:1;overflow-y:auto;padding:14px 16px}
+nav{display:flex;border-top:1px solid var(--ln);background:var(--card)}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:8px 0;font:inherit;font-size:12px;cursor:pointer}
+nav button span{display:block;font-size:19px}
+nav .on{color:var(--pri);font-weight:700}
+h2{font-size:20px;margin:4px 0 10px}h3{font-size:16px;margin:0 0 6px}
+p{margin:0 0 10px}.mut{color:var(--mut);font-size:14px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:12px;margin-bottom:10px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border:1px solid var(--ln);background:var(--card);color:var(--ink);border-radius:99px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer}
+.chip.on{background:var(--pri);color:var(--onp);border-color:var(--pri)}
+.btn{border:0;background:var(--pri);color:var(--onp);padding:10px 14px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer}
+.btn.alt{background:var(--acc);color:var(--onacc)}.btn.ghost{background:none;color:var(--pri);border:1px solid var(--pri)}
+.btn:disabled{opacity:.45;cursor:not-allowed}.w{width:100%}
+input,select{width:100%;padding:10px;border:1px solid var(--ln);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;margin-bottom:8px}
+label{font-size:14px;color:var(--mut)}
+.big{font-size:22px;font-weight:800}.old{text-decoration:line-through;color:var(--mut);font-size:14px}
+.tag{font-size:12px;background:var(--acc);color:var(--onacc);padding:2px 8px;border-radius:99px;font-weight:700}
+.tier{display:flex;justify-content:space-between;padding:7px 10px;border-radius:8px}
+.tier.me{background:var(--soft);font-weight:700}
+.fund{font-size:44px;font-weight:800;color:var(--pri);line-height:1}
+#sheet{position:fixed;inset:0;background:#0007;display:flex;align-items:flex-end;justify-content:center;z-index:5}
+#sheet[hidden]{display:none}
+#sheet>div{background:var(--bg);width:100%;max-width:440px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:88%;overflow:auto}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9;max-width:90%}
+#toast.s{opacity:1}
+.code{font-size:34px;font-weight:800;letter-spacing:4px;text-align:center;background:var(--soft);border-radius:12px;padding:10px;margin:8px 0}
+.stars button{font-size:26px;background:none;border:0;cursor:pointer;color:var(--acc)}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+</style></head><body>
+<div id="app"><header><b>Plate Forward</b><span id="who"></span></header><main id="v"></main><nav id="nav" hidden></nav></div>
+<div id="sheet" hidden></div><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const TY=['Estudiante','Maestro','Trabajador','Ciudadano'],DS={Estudiante:.8,Maestro:.9,Trabajador:1,Ciudadano:1};
+const SL=[[8,10],[10,12],[12,14],[14,16],[16,18],[18,20],[20,22]];
+const ZN=['Cholula centro','Zona UDLAP','Cerca de BUAP','Puebla centro'];
+const S={u:null,tab:'ofertas',zone:'Todas',free:new Set([4,5]),fund:14,amb:{on:false,n:0},mine:[],
+offers:[
+{id:1,n:'Panadería La Espiga',z:'Cholula centro',i:'🥖',d:'Pack de pan dulce y salado',o:120,p:55,q:6,h:[19,21]},
+{id:2,n:'Cafetería Campus',z:'Zona UDLAP',i:'☕',d:'Sándwich y bebida del día',o:110,p:50,q:4,h:[17,19]},
+{id:3,n:'Fonda Doña Mary',z:'Cerca de BUAP',i:'🍲',d:'Comida corrida: sopa, guisado y arroz',o:90,p:45,q:8,h:[16,18]},
+{id:4,n:'Súper La Esquina',z:'Puebla centro',i:'🛒',d:'Pack de frutas y verduras',o:250,p:90,q:3,h:[20,22]},
+{id:5,n:'Tortas El Güero',z:'Puebla centro',i:'🥪',d:'Dos tortas y agua de sabor',o:140,p:65,q:5,h:[14,16]}]};
+let R={t:'Estudiante',m:'Correo institucional',nm:'',inst:'UDLAP (privada)',idv:''};
+const pr=(o,t=S.u.t)=>Math.round(o.p*DS[t]),pc=(o,t=S.u.t)=>Math.round(100-pr(o,t)/o.o*100);
+const hr=h=>h[0]+':00 a '+h[1]+':00',match=o=>[...S.free].some(i=>SL[i][0]<o.h[1]&&o.h[0]<SL[i][1]);
+const toast=m=>{const t=$('#toast');t.textContent=m;t.className='s';clearTimeout(toast.k);toast.k=setTimeout(()=>t.className='',2400)};
+const tiers=o=>TY.map(t=>`<div class="tier ${t===S.u.t?'me':''}"><span>${t}</span><span>$${pr(o,t)} (${pc(o,t)}% menos)</span></div>`).join('');
+function reg(){
+ const v=R.t==='Estudiante'||R.t==='Maestro';
+ $('#nav').hidden=true;$('#who').textContent='';
+ $('#v').innerHTML=`<h2>Crea tu cuenta</h2><p class="mut">Rescata comida buena de negocios cerca de ti, a menor precio. Elige tu perfil para ver tu precio.</p>
+ <label for="nm">Nombre</label><input id="nm" value="${esc(R.nm)}" placeholder="Tu nombre">
+ <label>¿Quién eres?</label><div class="chips">${TY.map(t=>`<button class="chip ${R.t===t?'on':''}" data-a="t" data-v="${t}">${t}</button>`).join('')}</div>
+ ${v?`<div class="card"><h3>Valida tu perfil para obtener el descuento</h3>
+ <label for="ins">Institución</label><select id="ins">${['UDLAP (privada)','BUAP (pública)','Otra universidad pública','Otra universidad privada'].map(x=>`<option ${x===R.inst?'selected':''}>${x}</option>`).join('')}</select>
+ <div class="chips">${['Correo institucional','Credencial o ID'].map(m=>`<button class="chip ${R.m===m?'on':''}" data-a="m" data-v="${m}">${m}</button>`).join('')}</div>
+ <input id="idv" value="${esc(R.idv)}" placeholder="${R.m==='Credencial o ID'?'Número de credencial o ID':'nombre@universidad.mx'}"></div>`:`<p class="mut">Como ${R.t.toLowerCase()} pagas el precio de rescate que fija cada negocio.</p>`}
+ <button class="btn w" data-a="go">${v?'Validar y entrar':'Entrar'}</button>`;
+}
+const V={
+ofertas(){const L=S.offers.filter(o=>S.zone==='Todas'||o.z===S.zone).sort((a,b)=>match(b)-match(a));
+ return `<h2>Ofertas cerca de ti</h2><div class="chips">${['Todas',...ZN].map(z=>`<button class="chip ${S.zone===z?'on':''}" data-a="zone" data-v="${z}">${z}</button>`).join('')}</div>`+
+ (L.map(o=>`<div class="card"><div class="row"><h3>${o.i} ${esc(o.n)}</h3>${S.u.t==='Estudiante'||S.u.t==='Maestro'?'<span class="tag">Tu descuento</span>':''}</div>
+ <p class="mut">${esc(o.d)} · ${o.z}</p><div class="row"><div><span class="old">$${o.o}</span> <span class="big">$${pr(o)}</span> <span class="mut">${pc(o)}% menos</span></div>
+ <button class="btn" data-a="res" data-v="${o.id}" ${o.q?'':'disabled'}>${o.q?'Reservar':'Agotado'}</button></div>
+ <p class="mut" style="margin:6px 0 0">Recoge de ${hr(o.h)} · quedan ${o.q}${match(o)?' · <b style="color:var(--pri)">Coincide con tu hueco libre</b>':''}</p></div>`).join('')||'<p class="mut">No hay ofertas en esta zona por ahora.</p>');},
+horario(){return `<h2>Tus huecos libres de hoy</h2><p class="mut">Marca cuándo puedes pasar a recoger. Te avisaremos de las ofertas que coincidan con tus huecos.</p>
+ <div class="chips">${SL.map((s,i)=>`<button class="chip ${S.free.has(i)?'on':''}" data-a="slot" data-v="${i}">${s[0]}:00 a ${s[1]}:00</button>`).join('')}</div>
+ <div class="card"><h3>Ofertas que coinciden</h3>${S.offers.filter(match).map(o=>`<p>${o.i} ${esc(o.n)} · ${hr(o.h)}</p>`).join('')||'<p class="mut">Marca un hueco para ver coincidencias.</p>'}</div>`;},
+fondo(){const e=S.u.t==='Estudiante';return `<h2>Fondo solidario</h2><div class="card"><div class="fund">${S.fund}</div><p class="mut">packs pagados disponibles para estudiantes con necesidad</p></div>
+ <div class="card"><h3>Deja un pack pagado</h3><p class="mut">Negocios, patrocinadores o cualquier persona pueden pagar un pack para otra persona.</p>
+ <div class="row"><select id="dq" style="margin:0;width:90px">${[1,2,3,5].map(n=>`<option>${n}</option>`).join('')}</select><button class="btn alt" data-a="don">Dejar packs</button></div></div>
+ <div class="card"><h3>Canjea un pack gratis</h3>${e?`<label><input type="checkbox" id="nd" style="width:auto;margin:0 6px 0 0">Confirmo que lo necesito</label>
+ <button class="btn w" style="margin-top:8px" data-a="red">Canjear pack gratis</button>`:'<p class="mut">El canje es solo para estudiantes validados.</p>'}</div>`;},
+perfil(){const o=S.offers[0];return `<h2>${esc(S.u.n)}</h2><p class="mut">${S.u.t}${S.u.v?' · '+esc(S.u.inst)+' · validado con '+S.u.m.toLowerCase():''}</p>
+ <div class="card"><h3>Precios escalonados (ejemplo)</h3><p class="mut">Con un pack de $${o.o} que el negocio rescata en $${o.p}:</p>${tiers(o)}<p class="mut" style="margin-top:6px">Los porcentajes están por definir.</p></div>
+ <div class="card"><h3>Programa de embajadores</h3><p class="mut">Suma negocios a la plataforma como voluntario. La constancia depende de que tu universidad la reconozca.</p>
+ ${S.amb.on?`<p><b>${S.amb.n}</b> negocios sumados</p><button class="btn alt" data-a="ambadd">Registrar un negocio invitado</button>`:'<button class="btn" data-a="amb">Unirme como embajador</button>'}</div>
+ <button class="btn ghost w" data-a="out">Cambiar de perfil</button>`;},
+negocio(){return `<h2>Panel para negocios</h2><p class="mut">Publica lo que no vendiste hoy y está en buen estado.</p>
+ <div class="card"><input id="bn" placeholder="Nombre del negocio"><input id="bd" placeholder="Descripción del pack">
+ <div class="row"><input id="bo" type="number" placeholder="Precio original"><input id="bp" type="number" placeholder="Precio rescate"></div>
+ <div class="row"><input id="bq" type="number" placeholder="Cantidad"><input id="bh" type="number" placeholder="Recoger desde (hora)"></div>
+ <button class="btn w" data-a="pub">Publicar pack</button></div>
+ ${S.mine.map(o=>`<div class="card"><b>${esc(o.n)}</b><p class="mut" style="margin:0">${esc(o.d)} · $${o.p} · ${o.q} disponibles</p></div>`).join('')}`;}};
+const tabs=[['ofertas','🍽️','Ofertas'],['horario','🕒','Horario'],['fondo','🤝','Fondo'],['perfil','👤','Perfil'],['negocio','🏪','Negocio']];
+function render(){if(!S.u)return reg();$('#nav').hidden=false;$('#who').textContent=S.u.t;
+ $('#nav').innerHTML=tabs.map(t=>`<button class="${S.tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('');$('#v').innerHTML=V[S.tab]();}
+const sheet=h=>{const s=$('#sheet');s.innerHTML=`<div>${h}</div>`;s.hidden=false};
+const keep=()=>{if($('#nm'))R.nm=$('#nm').value;if($('#idv'))R.idv=$('#idv').value;if($('#ins'))R.inst=$('#ins').value};
+const A={
+t(v){keep();R.t=v;reg()},m(v){keep();R.m=v;reg()},
+go(){keep();const v=R.t==='Estudiante'||R.t==='Maestro';if(v&&!R.idv.trim())return toast('Escribe tu correo institucional o tu ID para validar');
+ S.u={n:R.nm.trim()||'Usuario',t:R.t,v,inst:R.inst,m:R.m};S.tab='ofertas';render();toast(v?'Perfil validado: tu descuento está activo':'Cuenta creada')},
+tab(v){S.tab=v;render()},zone(v){S.zone=v;render()},
+slot(v){v=+v;S.free.has(v)?S.free.delete(v):S.free.add(v);render()},
+res(v){const o=S.offers.find(x=>x.id==v);sheet(`<h2>${o.i} ${esc(o.n)}</h2><p class="mut">${esc(o.d)} · recoge de ${hr(o.h)}</p>${tiers(o)}
+ <label for="pm" style="display:block;margin-top:10px">Forma de pago</label><select id="pm"><option>Tarjeta</option><option>Transferencia</option><option>Efectivo al recoger</option></select>
+ <button class="btn w" data-a="pay" data-v="${o.id}">Pagar $${pr(o)}</button><button class="btn ghost w" style="margin-top:8px" data-a="close">Cancelar</button>`)},
+pay(v){const o=S.offers.find(x=>x.id==v);o.q--;sheet(`<h2>Compra confirmada</h2><p>Muestra este código en ${esc(o.n)} entre las ${hr(o.h)}.</p><div class="code">${1000+Math.floor(Math.random()*9000)}</div>
+ <button class="btn w" data-a="got">Ya recogí mi pack</button>`);render()},
+got(){sheet(`<h2>¿Cómo estuvo tu pack?</h2><div class="stars">${[1,2,3,4,5].map(n=>`<button data-a="star" aria-label="${n} estrellas">★</button>`).join('')}</div>`)},
+star(){A.close();toast('Gracias por tu calificación')},close(){$('#sheet').hidden=true},
+don(){const n=+$('#dq').value;S.fund+=n;render();toast('Dejaste '+n+' pack(s) en el fondo')},
+red(){if(!$('#nd').checked)return toast('Confirma tu necesidad para canjear');if(!S.fund)return toast('El fondo está vacío por ahora');S.fund--;render();toast('Canjeado: recoge tu pack gratis con tu código')},
+amb(){S.amb.on=true;render();toast('Ya eres embajador voluntario')},ambadd(){S.amb.n++;render();toast('Negocio sumado')},
+out(){S.u=null;R.idv='';render()},
+pub(){const n=$('#bn').value.trim(),o=+$('#bo').value,p=+$('#bp').value,q=+$('#bq').value,h=+$('#bh').value;
+ if(!n||!o||!p||!q||!h||p>=o)return toast('Completa los campos; el precio de rescate debe ser menor al original');
+ const x={id:Date.now(),n,z:'Cholula centro',i:'🍴',d:$('#bd').value||'Pack sorpresa',o,p,q,h:[h,h+2]};S.offers.unshift(x);S.mine.push(x);render();toast('Pack publicado: ya aparece en Ofertas')}};
+document.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a)A[a.dataset.a](a.dataset.v)});
+render();
+</script></body></html>
